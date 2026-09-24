@@ -11,11 +11,11 @@ const http = (url, opt) => new Promise((resolve, reject) => {
 })
 
 const sources = {
-  kw: { name: "酷我", type: "music" },
-  kg: { name: "酷狗", type: "music" },
-  tx: { name: "QQ音乐", type: "music" },
-  wy: { name: "网易云", type: "music" },
-  mg: { name: "咪咕", type: "music" }
+  kw: { name: "酷我", type: "music", actions: ["search","musicUrl","lyric","pic"] },
+  kg: { name: "酷狗", type: "music", actions: ["search","musicUrl","lyric","pic"] },
+  tx: { name: "QQ音乐", type: "music", actions: ["search","musicUrl","lyric","pic"] },
+  wy: { name: "网易云", type: "music", actions: ["search","musicUrl","lyric","pic"] },
+  mg: { name: "咪咕", type: "music", actions: ["search","musicUrl","lyric","pic"] }
 }
 
 const api = {
@@ -30,7 +30,7 @@ const api = {
     return res.url
   },
   lyric: async (info) => {
-    const res = await http(`https://api.example.com/flower/lyric?id=${info.songmid}`)
+    const res = await http(`https://api.example.com/lyric?id=${info.songmid}`)
     return {
       lyric: res.lyric || "",
       tlyric: res.tlyric || null,
@@ -39,7 +39,7 @@ const api = {
     }
   },
   pic: async (info) => {
-    const res = await http(`https://api.example.com/flower/pic?id=${info.songmid}`)
+    const res = await http(`https://api.example.com/pic?id=${info.songmid}`)
     return res.pic
   }
 }
