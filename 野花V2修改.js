@@ -1,71 +1,63 @@
-// @name Flower音源
-// @description 洛雪音乐Flower第三方音源
-// @version 1.0.0
-// @author pdone
-// @platform kw,kg,tx,wy,mg
-// @actions search,musicUrl,lyric,pic
-
+/**
+ * @name 野花V2
+ * @description 野花V2聚合音源，适配fnmusic-ext 2.3.0
+ * @platform kw,kg,tx,wy,mg
+ * @actions search,musicUrl,lyric,pic
+ */
 const { EVENT_NAMES, request, on, send } = globalThis.lx
-const httpRequest = (url, options) => new Promise((resolve, reject) => {
-  request(url, options, (err, resp) => {
-    if (err) return reject(err)
-    resolve(resp.body)
-  })
+
+const http = (url, opt) => new Promise((resolve, reject) => {
+  request(url, opt, (err, res) => err ? reject(err) : resolve(res.body))
 })
-// 音源接口逻辑（兼容新版LX规则）
-const apis = {
-  flower: {
-    musicUrl(info, quality) {
-      return httpRequest(`https://api.example.com/url?id=${info.songmid}&quality=${quality}`).then(data => {
-        return data.url
-      })
-    },
-    pic(info) {
-      return httpRequest(`https://api.example.com/pic?id=${info.songmid}`).then(data => {
-        return data.url
-      })
-    },
-    lyric(info) {
-      return httpRequest(`https://api.example.com/lyric?id=${info.songmid}`).then(data => {
-        return {
-          lyric: data.lyric,
-          tlyric: data.tlyric || null,
-          rlyric: null,
-          lxlyric: null
-        }
-      })
+
+const sources = {
+  kw: { name: "酷我", type: "music" },
+  kg: { name: "酷狗", type: "music" },
+  tx: { name: "QQ音乐", type: "music" },
+  wy: { name: "网易云", type: "music" },
+  mg: { name: "咪咕", type: "music" }
+}
+
+const api = {
+  search: async (info) => {
+    const keyword = info.keyword
+    const page = info.page || 1
+    const res = await http(`https://api.example.com/flower/search?kw=${encodeURIComponent(keyword)}&p=${page}`)
+    return res.data
+  },
+  musicUrl: async (info, quality) => {
+    const res = await http(`https://api.example.com/flower/url?id=${info.songmid}&q=${quality}`)
+    return res.url
+  },
+  lyric: async (info) => {
+    const res = await http(`https://api.example.com/flower/lyric?id=${info.songmid}`)
+    return {
+      lyric: res.lyric || "",
+      tlyric: res.tlyric || null,
+      rlyric: null,
+      lxlyric: null
     }
+  },
+  pic: async (info) => {
+    const res = await http(`https://api.example.com/flower/pic?id=${info.songmid}`)
+    return res.pic
   }
 }
-// 注册请求事件
-on(EVENT_NAMES.request, ({ source, action, info }) => {
+
+on(EVENT_NAMES.request, async ({ source, action, info }) => {
   switch (action) {
-    case 'musicUrl':
-      return apis[source].musicUrl(info.musicInfo, info.type).catch(err => {
-        console.error(err)
-        return Promise.reject(err)
-      })
-    case 'lyric':
-      return apis[source].lyric(info.musicInfo).catch(err => {
-        console.error(err)
-        return Promise.reject(err)
-      })
-    case 'pic':
-      return apis[source].pic(info.musicInfo).catch(err => {
-        console.error(err)
-        return Promise.reject(err)
-      })
+    case "search":
+      return api.search(info)
+    case "musicUrl":
+      return api.musicUrl(info.musicInfo, info.type)
+    case "lyric":
+      return api.lyric(info.musicInfo)
+    case "pic":
+      return api.pic(info.musicInfo)
   }
 })
-// 【关键修复】新版LX必须添加初始化事件（解决导入报错）
+
 send(EVENT_NAMES.inited, {
   openDevTools: false,
-  sources: {
-    flower: {
-      name: "Flower音源",
-      type: "music",
-      actions: ["musicUrl", "lyric", "pic"],
-      qualitys: ["128k", "320k", "flac"]
-    }
-  }
+  sources
 })
